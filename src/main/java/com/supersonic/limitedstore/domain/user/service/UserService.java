@@ -7,8 +7,10 @@ import com.supersonic.limitedstore.common.exception.ErrorCode;
 import com.supersonic.limitedstore.domain.user.entity.User;
 import com.supersonic.limitedstore.domain.user.presentation.dto.req.LoginRequestDto;
 import com.supersonic.limitedstore.domain.user.presentation.dto.req.UserSignupRequestDto;
+import com.supersonic.limitedstore.domain.user.presentation.dto.res.LoginResponseDto;
 import com.supersonic.limitedstore.domain.user.presentation.dto.res.UserResponseDto;
 import com.supersonic.limitedstore.domain.user.repository.UserRepository;
+import com.supersonic.limitedstore.security.JwtTokenProvider;
 import java.util.UUID;
 import jdk.jshell.spi.ExecutionControl;
 import jdk.jshell.spi.ExecutionControl.UserException;
@@ -22,6 +24,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
 
 
     public ApiResponse<UserResponseDto> signup(UserSignupRequestDto dto) {
@@ -58,7 +61,7 @@ public class UserService {
         );
     }
 
-    public ApiResponse<UserResponseDto> login(LoginRequestDto dto) {
+    public ApiResponse<LoginResponseDto> login(LoginRequestDto dto) {
         User user = userRepository.findByEmail(dto.getEmail()).orElseThrow(
             () -> new CustomException(ErrorCode.NOT_FOUND_EMAIL));
 
@@ -66,12 +69,21 @@ public class UserService {
             throw new CustomException(ErrorCode.INVALID_PASSWORD);
         }
 
+        String token = jwtTokenProvider.createToken(user.getEmail());
+
         return ApiResponse.ok(
-            UserResponseDto.builder()
+            LoginResponseDto.builder()
                 .id(user.getId())
                 .email(user.getEmail())
                 .nickname(user.getNickname())
+                .accessToken(token)
                 .build()
+        );
+    }
+
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email).orElseThrow(
+            () -> new CustomException(ErrorCode.NOT_FOUND_EMAIL)
         );
     }
 }
