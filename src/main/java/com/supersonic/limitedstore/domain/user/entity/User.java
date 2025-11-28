@@ -1,6 +1,9 @@
 package com.supersonic.limitedstore.domain.user.entity;
 
+import com.supersonic.limitedstore.common.dto.ApiResponse;
 import com.supersonic.limitedstore.common.entity.BaseEntity;
+import com.supersonic.limitedstore.domain.user.presentation.dto.req.UserUpdateRequestDto;
+import com.supersonic.limitedstore.domain.user.presentation.dto.res.UserResponseDto;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -34,4 +37,10 @@ public class User extends BaseEntity {
 
     @Column(nullable = false)
     private String password;
+
+    public void updateUser(UserUpdateRequestDto dto) {
+        if (dto.getNickname() != null) {
+            this.nickname = dto.getNickname();
+        }
+    }
 }

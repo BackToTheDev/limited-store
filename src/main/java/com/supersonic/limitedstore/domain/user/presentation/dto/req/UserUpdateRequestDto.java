@@ -1,7 +1,7 @@
 package com.supersonic.limitedstore.domain.user.presentation.dto.req;
 
 import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,16 +9,17 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class LoginRequestDto {
+@Builder
+public class UserUpdateRequestDto {
+
+    @NotNull
     @Email
-    @Size(min = 8, max = 100)
     private String email;
 
-    @NotBlank
-    @Size(min = 5, max = 100)
-    private String password;
+    @NotNull
+    @Size(min = 1, max = 20)
+    private String nickname;
 
 }
