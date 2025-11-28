@@ -1,5 +1,6 @@
 package com.supersonic.limitedstore.common.dto;
 
+import com.supersonic.limitedstore.common.exception.ErrorCode;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -22,6 +23,14 @@ public class ApiResponse<T> {
         return ApiResponse.builder()
             .status(status)
             .message(message)
+            .data(null)
+            .build();
+    }
+
+    public static ApiResponse<?> error(ErrorCode errorCode) {
+        return ApiResponse.builder()
+            .status(errorCode.getHttpStatus().value())
+            .message(errorCode.getMessage())
             .data(null)
             .build();
     }

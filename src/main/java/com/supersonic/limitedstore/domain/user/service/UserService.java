@@ -7,6 +7,7 @@ import com.supersonic.limitedstore.common.exception.ErrorCode;
 import com.supersonic.limitedstore.domain.user.entity.User;
 import com.supersonic.limitedstore.domain.user.presentation.dto.req.LoginRequestDto;
 import com.supersonic.limitedstore.domain.user.presentation.dto.req.UserSignupRequestDto;
+import com.supersonic.limitedstore.domain.user.presentation.dto.req.UserUpdateRequestDto;
 import com.supersonic.limitedstore.domain.user.presentation.dto.res.LoginResponseDto;
 import com.supersonic.limitedstore.domain.user.presentation.dto.res.UserResponseDto;
 import com.supersonic.limitedstore.domain.user.repository.UserRepository;
@@ -65,6 +66,10 @@ public class UserService {
         User user = userRepository.findByEmail(dto.getEmail()).orElseThrow(
             () -> new CustomException(ErrorCode.NOT_FOUND_EMAIL));
 
+        if (user.isDeleted()) {
+            throw new CustomException(ErrorCode.USER_DELETED);
+        }
+
         if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
             throw new CustomException(ErrorCode.INVALID_PASSWORD);
         }
@@ -81,9 +86,55 @@ public class UserService {
         );
     }
 
-    public User getUserByEmail(String email) {
-        return userRepository.findByEmail(email).orElseThrow(
+    public ApiResponse<UserResponseDto> updateUser (UserUpdateRequestDto dto, String email) {
+        User user = userRepository.findByEmail(email).orElseThrow(
             () -> new CustomException(ErrorCode.NOT_FOUND_EMAIL)
         );
+
+        if (user.isDeleted()) {
+            throw new CustomException(ErrorCode.USER_DELETED);
+        }
+
+        if (userRepository.existsByNickname(dto.getNickname())
+        && !user.getNickname().equals(dto.getNickname())) {
+            throw new CustomException(ErrorCode.NICKNAME_DUPLICATED);
+        }
+
+        user.updateUser(dto);
+        userRepository.save(user);
+
+        return ApiResponse.ok(
+            UserResponseDto.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .nickname(user.getNickname())
+                .build()
+        );
+    }
+
+    public void deleteUser(String email) {
+        User user = userRepository.findByEmail(email).orElseThrow(
+            () -> new CustomException(ErrorCode.NOT_FOUND_EMAIL));
+
+        if (user.isDeleted()) {
+            throw new CustomException(ErrorCode.USER_DELETED);
+        }
+
+        user.softDelete();
+        userRepository.save(user);
+    }
+
+
+
+    public User getUserByEmail(String email) {
+        User user = userRepository.findByEmail(email).orElseThrow(
+            () -> new CustomException(ErrorCode.NOT_FOUND_EMAIL)
+        );
+
+        if (user.isDeleted()) {
+            throw new CustomException(ErrorCode.USER_DELETED);
+        }
+
+        return user;
     }
 }

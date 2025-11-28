@@ -13,6 +13,7 @@ public enum ErrorCode {
     NOT_FOUND_EMAIL(HttpStatus.NOT_FOUND, "이메일이 존재하지 않습니다."),
     EMAIL_DUPLICATED(HttpStatus.CONFLICT, "중복되는 이메일 입니다."),
     NICKNAME_DUPLICATED(HttpStatus.CONFLICT, "중복되는 닉네임 입니다."),
+    USER_DELETED(HttpStatus.FORBIDDEN, "탈퇴된 계정입니다."),
 
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "User not found"),
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "Product not found"),

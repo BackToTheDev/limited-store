@@ -6,6 +6,7 @@ import com.supersonic.limitedstore.common.exception.ErrorCode;
 import com.supersonic.limitedstore.domain.user.entity.User;
 import com.supersonic.limitedstore.domain.user.presentation.dto.req.LoginRequestDto;
 import com.supersonic.limitedstore.domain.user.presentation.dto.req.UserSignupRequestDto;
+import com.supersonic.limitedstore.domain.user.presentation.dto.req.UserUpdateRequestDto;
 import com.supersonic.limitedstore.domain.user.presentation.dto.res.LoginResponseDto;
 import com.supersonic.limitedstore.domain.user.presentation.dto.res.UserResponseDto;
 import com.supersonic.limitedstore.domain.user.service.UserService;
@@ -14,7 +15,9 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -41,10 +44,6 @@ public class UserController {
     public ApiResponse<UserResponseDto> getMyInfo(HttpServletRequest request) {
         String email = (String) request.getAttribute("email");
 
-        if (email == null) {
-            throw new CustomException(ErrorCode.NOT_FOUND_EMAIL);
-        }
-
         User user = userService.getUserByEmail(email);
 
         return ApiResponse.ok(
@@ -54,5 +53,18 @@ public class UserController {
                 .nickname(user.getNickname())
                 .build()
         );
+    }
+
+    @PatchMapping("/me")
+    public ApiResponse<UserResponseDto> updateMyInfo(@RequestBody @Valid UserUpdateRequestDto dto, HttpServletRequest request) {
+        String email = (String) request.getAttribute("email");
+        return userService.updateUser(dto, email);
+    }
+
+    @DeleteMapping("/me")
+    public ApiResponse<Void> userDelete(HttpServletRequest request) {
+        String email = (String) request.getAttribute("email");
+        userService.deleteUser(email);
+        return ApiResponse.ok(null);
     }
 }
