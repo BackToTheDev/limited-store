@@ -1,10 +1,8 @@
 package com.supersonic.limitedstore.domain.user.presentation.controller;
 
 import com.supersonic.limitedstore.common.dto.ApiResponse;
-import com.supersonic.limitedstore.common.exception.CustomException;
-import com.supersonic.limitedstore.common.exception.ErrorCode;
 import com.supersonic.limitedstore.domain.user.entity.User;
-import com.supersonic.limitedstore.domain.user.presentation.dto.req.LoginRequestDto;
+import com.supersonic.limitedstore.domain.user.presentation.dto.req.UserLoginRequestDto;
 import com.supersonic.limitedstore.domain.user.presentation.dto.req.UserSignupRequestDto;
 import com.supersonic.limitedstore.domain.user.presentation.dto.req.UserUpdateRequestDto;
 import com.supersonic.limitedstore.domain.user.presentation.dto.res.LoginResponseDto;
@@ -13,8 +11,6 @@ import com.supersonic.limitedstore.domain.user.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -36,7 +32,7 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ApiResponse<LoginResponseDto> login(@RequestBody @Valid LoginRequestDto dto) {
+    public ApiResponse<LoginResponseDto> login(@RequestBody @Valid UserLoginRequestDto dto) {
         return userService.login(dto);
     }
 
