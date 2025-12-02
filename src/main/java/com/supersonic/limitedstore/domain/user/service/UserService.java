@@ -1,20 +1,16 @@
 package com.supersonic.limitedstore.domain.user.service;
 
-import com.supersonic.limitedstore.common.config.SecurityConfig;
 import com.supersonic.limitedstore.common.dto.ApiResponse;
 import com.supersonic.limitedstore.common.exception.CustomException;
 import com.supersonic.limitedstore.common.exception.ErrorCode;
 import com.supersonic.limitedstore.domain.user.entity.User;
-import com.supersonic.limitedstore.domain.user.presentation.dto.req.LoginRequestDto;
+import com.supersonic.limitedstore.domain.user.presentation.dto.req.UserLoginRequestDto;
 import com.supersonic.limitedstore.domain.user.presentation.dto.req.UserSignupRequestDto;
 import com.supersonic.limitedstore.domain.user.presentation.dto.req.UserUpdateRequestDto;
-import com.supersonic.limitedstore.domain.user.presentation.dto.res.LoginResponseDto;
+import com.supersonic.limitedstore.domain.user.presentation.dto.res.UserLoginResponseDto;
 import com.supersonic.limitedstore.domain.user.presentation.dto.res.UserResponseDto;
 import com.supersonic.limitedstore.domain.user.repository.UserRepository;
 import com.supersonic.limitedstore.security.JwtTokenProvider;
-import java.util.UUID;
-import jdk.jshell.spi.ExecutionControl;
-import jdk.jshell.spi.ExecutionControl.UserException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -62,7 +58,7 @@ public class UserService {
         );
     }
 
-    public ApiResponse<LoginResponseDto> login(LoginRequestDto dto) {
+    public ApiResponse<UserLoginResponseDto> login(UserLoginRequestDto dto) {
         User user = userRepository.findByEmail(dto.getEmail()).orElseThrow(
             () -> new CustomException(ErrorCode.NOT_FOUND_EMAIL));
 
@@ -77,7 +73,7 @@ public class UserService {
         String token = jwtTokenProvider.createToken(user.getEmail());
 
         return ApiResponse.ok(
-            LoginResponseDto.builder()
+            UserLoginResponseDto.builder()
                 .id(user.getId())
                 .email(user.getEmail())
                 .nickname(user.getNickname())
