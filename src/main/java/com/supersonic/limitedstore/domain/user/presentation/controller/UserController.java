@@ -5,7 +5,7 @@ import com.supersonic.limitedstore.domain.user.entity.User;
 import com.supersonic.limitedstore.domain.user.presentation.dto.req.UserLoginRequestDto;
 import com.supersonic.limitedstore.domain.user.presentation.dto.req.UserSignupRequestDto;
 import com.supersonic.limitedstore.domain.user.presentation.dto.req.UserUpdateRequestDto;
-import com.supersonic.limitedstore.domain.user.presentation.dto.res.LoginResponseDto;
+import com.supersonic.limitedstore.domain.user.presentation.dto.res.UserLoginResponseDto;
 import com.supersonic.limitedstore.domain.user.presentation.dto.res.UserResponseDto;
 import com.supersonic.limitedstore.domain.user.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,7 +32,7 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ApiResponse<LoginResponseDto> login(@RequestBody @Valid UserLoginRequestDto dto) {
+    public ApiResponse<UserLoginResponseDto> login(@RequestBody @Valid UserLoginRequestDto dto) {
         return userService.login(dto);
     }
 

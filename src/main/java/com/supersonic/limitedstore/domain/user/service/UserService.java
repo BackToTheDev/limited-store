@@ -7,7 +7,7 @@ import com.supersonic.limitedstore.domain.user.entity.User;
 import com.supersonic.limitedstore.domain.user.presentation.dto.req.UserLoginRequestDto;
 import com.supersonic.limitedstore.domain.user.presentation.dto.req.UserSignupRequestDto;
 import com.supersonic.limitedstore.domain.user.presentation.dto.req.UserUpdateRequestDto;
-import com.supersonic.limitedstore.domain.user.presentation.dto.res.LoginResponseDto;
+import com.supersonic.limitedstore.domain.user.presentation.dto.res.UserLoginResponseDto;
 import com.supersonic.limitedstore.domain.user.presentation.dto.res.UserResponseDto;
 import com.supersonic.limitedstore.domain.user.repository.UserRepository;
 import com.supersonic.limitedstore.security.JwtTokenProvider;
@@ -58,7 +58,7 @@ public class UserService {
         );
     }
 
-    public ApiResponse<LoginResponseDto> login(UserLoginRequestDto dto) {
+    public ApiResponse<UserLoginResponseDto> login(UserLoginRequestDto dto) {
         User user = userRepository.findByEmail(dto.getEmail()).orElseThrow(
             () -> new CustomException(ErrorCode.NOT_FOUND_EMAIL));
 
@@ -73,7 +73,7 @@ public class UserService {
         String token = jwtTokenProvider.createToken(user.getEmail());
 
         return ApiResponse.ok(
-            LoginResponseDto.builder()
+            UserLoginResponseDto.builder()
                 .id(user.getId())
                 .email(user.getEmail())
                 .nickname(user.getNickname())
