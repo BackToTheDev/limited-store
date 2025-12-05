@@ -27,7 +27,7 @@ public class Product extends BaseEntity {
     @Column()
     private UUID id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String name;
 
     @Column
@@ -41,4 +41,12 @@ public class Product extends BaseEntity {
 
     @Column()
     private LocalDateTime releaseAt;
+
+    public void update(String name, String description, Integer price, Integer stock, LocalDateTime releaseAt) {
+        if (name != null) this.name = name;
+        if (description != null) this.description = description;
+        if (price != null) this.price = price;
+        if (stock != null) this.stock = stock;
+        if (releaseAt != null) this.releaseAt = releaseAt;
+    }
 }
