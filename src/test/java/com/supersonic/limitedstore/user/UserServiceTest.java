@@ -7,7 +7,7 @@ import com.supersonic.limitedstore.domain.user.entity.User;
 import com.supersonic.limitedstore.domain.user.presentation.dto.req.UserLoginRequestDto;
 import com.supersonic.limitedstore.domain.user.presentation.dto.req.UserSignupRequestDto;
 import com.supersonic.limitedstore.domain.user.presentation.dto.req.UserUpdateRequestDto;
-import com.supersonic.limitedstore.domain.user.presentation.dto.res.LoginResponseDto;
+import com.supersonic.limitedstore.domain.user.presentation.dto.res.UserLoginResponseDto;
 import com.supersonic.limitedstore.domain.user.presentation.dto.res.UserResponseDto;
 import com.supersonic.limitedstore.domain.user.repository.UserRepository;
 import com.supersonic.limitedstore.domain.user.service.UserService;
@@ -129,7 +129,7 @@ public class UserServiceTest {
         when(jwtTokenProvider.createToken(any())).thenReturn("token");
 
         //when
-        ApiResponse<LoginResponseDto> result = userService.login(dto);
+        ApiResponse<UserLoginResponseDto> result = userService.login(dto);
 
         //then
         assertThat(result.getStatus()).isEqualTo(200);
