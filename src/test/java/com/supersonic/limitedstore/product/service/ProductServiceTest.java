@@ -1,8 +1,7 @@
-package com.supersonic.limitedstore.product;
+package com.supersonic.limitedstore.product.service;
 
 import com.supersonic.limitedstore.common.dto.ApiResponse;
 import com.supersonic.limitedstore.common.exception.CustomException;
-import com.supersonic.limitedstore.common.exception.ErrorCode;
 import com.supersonic.limitedstore.domain.product.entity.Product;
 import com.supersonic.limitedstore.domain.product.presentation.dto.req.ProductRequestDto;
 import com.supersonic.limitedstore.domain.product.presentation.dto.req.ProductUpdateRequestDto;
