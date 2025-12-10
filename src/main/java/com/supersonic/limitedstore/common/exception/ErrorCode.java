@@ -24,7 +24,9 @@ public enum ErrorCode {
     DUPLICATE_ORDER(HttpStatus.BAD_REQUEST, "이미 주문한 상품입니다."),
 
     INVALID_DATE_FORMAT(HttpStatus.BAD_REQUEST, "날짜 형식이 올바르지 않습니다."),
-    INVALID_PASSWORD(HttpStatus.BAD_REQUEST, "비밀번호가 올바르지 않습니다." ),;
+    INVALID_PASSWORD(HttpStatus.BAD_REQUEST, "비밀번호가 올바르지 않습니다." ),
+    ALREADY_PURCHASED(HttpStatus.CONFLICT, "해당 상품은 1인 1개만 구매할 수 있습니다.");
+
 
     private final HttpStatus httpStatus;
     private final String message;
