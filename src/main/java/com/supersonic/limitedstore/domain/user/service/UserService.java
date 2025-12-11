@@ -70,7 +70,7 @@ public class UserService {
             throw new CustomException(ErrorCode.INVALID_PASSWORD);
         }
 
-        String token = jwtTokenProvider.createToken(user.getEmail());
+        String token = jwtTokenProvider.createToken(user.getId(), user.getEmail());
 
         return ApiResponse.ok(
             UserLoginResponseDto.builder()

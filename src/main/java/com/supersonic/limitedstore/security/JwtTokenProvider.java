@@ -8,6 +8,7 @@ import jakarta.annotation.PostConstruct;
 import java.security.Key;
 import java.security.KeyStore;
 import java.util.Date;
+import java.util.UUID;
 import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Component;
 
@@ -27,12 +28,13 @@ public class JwtTokenProvider {
     }
 
     // 토큰 생성
-    public String createToken(String email) {
+    public String createToken(UUID memberId, String email) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + accessTokenValidTime);
 
         return Jwts.builder()
-            .setSubject(email) // 이메일을 subject에 저장
+            .claim("memberId", memberId.toString())
+            .claim("email", email)
             .setIssuedAt(now) // 토큰 발급 시간
             .setExpiration(expiry) // 만료시간
             .signWith(key, SignatureAlgorithm.HS256) // HS256 알고리즘으로 서명
@@ -61,5 +63,13 @@ public class JwtTokenProvider {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    public Claims getClaims(String token) {
+        return Jwts.parserBuilder()
+            .setSigningKey(key)
+            .build()
+            .parseClaimsJws(token)
+            .getBody();
     }
 }
