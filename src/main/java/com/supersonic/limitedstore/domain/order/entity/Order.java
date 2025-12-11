@@ -8,6 +8,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,6 +19,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Builder
 @AllArgsConstructor
+@Table(name = "orders")
 @NoArgsConstructor
 public class Order extends BaseEntity {
     @Id
@@ -41,5 +43,9 @@ public class Order extends BaseEntity {
             .productId(productId)
             .orderStatus(OrderStatus.READY)
             .build();
+    }
+
+    public void updateStatus(OrderStatus newStatus) {
+        this.orderStatus = newStatus;
     }
 }

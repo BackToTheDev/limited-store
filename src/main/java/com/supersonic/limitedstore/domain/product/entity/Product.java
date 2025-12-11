@@ -1,6 +1,8 @@
 package com.supersonic.limitedstore.domain.product.entity;
 
 import com.supersonic.limitedstore.common.entity.BaseEntity;
+import com.supersonic.limitedstore.common.exception.CustomException;
+import com.supersonic.limitedstore.common.exception.ErrorCode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -48,5 +50,16 @@ public class Product extends BaseEntity {
         if (price != null) this.price = price;
         if (stock != null) this.stock = stock;
         if (releaseAt != null) this.releaseAt = releaseAt;
+    }
+
+    public void decreaseStock() {
+        if (this.stock <= 0) {
+            throw new CustomException(ErrorCode.OUT_OF_STOCK);
+        }
+        this.stock -= 1;
+    }
+
+    public void increaseStock() {
+        this.stock += 1;
     }
 }

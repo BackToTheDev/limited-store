@@ -1,5 +1,6 @@
 package com.supersonic.limitedstore.security;
 
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,6 +24,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         HttpServletResponse response,
         FilterChain filterChain)
         throws ServletException, IOException {
+
         String authHeader = request.getHeader("Authorization");
 
         // 헤더가 없거나 제대로 안 왔으면 그 다음 필터 진행
@@ -36,9 +38,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         // 토큰이 유효한 경우에만 인증 정보 생성
         if (jwtTokenProvider.validate(token)) {
-            String email = jwtTokenProvider.getEmail(token);
+
+            Claims claims = jwtTokenProvider.getClaims(token);
+
+            String email = claims.get("email", String.class);
+            String memberId = claims.get("memberId", String.class);
 
             request.setAttribute("email", email);
+            request.setAttribute("memberId", memberId);
 
             // 인증 객체 생성
             UsernamePasswordAuthenticationToken authentication =
@@ -54,5 +61,4 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
-
 }
