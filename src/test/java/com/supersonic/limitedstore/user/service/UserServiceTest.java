@@ -126,7 +126,7 @@ public class UserServiceTest {
 
         when(userRepository.findByEmail(dto.getEmail())).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(dto.getPassword(), user.getPassword())).thenReturn(true);
-        when(jwtTokenProvider.createToken(any())).thenReturn("token");
+        when(jwtTokenProvider.createToken(any(), any())).thenReturn("token");
 
         //when
         ApiResponse<UserLoginResponseDto> result = userService.login(dto);
