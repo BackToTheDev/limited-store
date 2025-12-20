@@ -2,6 +2,8 @@ package com.supersonic.limitedstore.order.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.supersonic.limitedstore.common.dto.ApiResponse;
+import com.supersonic.limitedstore.common.exception.CustomException;
+import com.supersonic.limitedstore.common.exception.ErrorCode;
 import com.supersonic.limitedstore.domain.order.entity.OrderStatus;
 import com.supersonic.limitedstore.domain.order.presentation.controller.OrderController;
 import com.supersonic.limitedstore.domain.order.presentation.dto.req.OrderRequestDto;
@@ -68,5 +70,41 @@ public class OrderControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.orderStatus")
                 .value(OrderStatus.READY.name()));
+    }
+
+    @Test
+    void 주문_생성_실패_재고없음() throws Exception {
+        // given
+        OrderRequestDto request = OrderRequestDto.builder()
+            .productId(productId)
+            .build();
+
+        when(orderService.createOrder(any(), any()))
+            .thenThrow(new CustomException(ErrorCode.OUT_OF_STOCK));
+
+        //when & then
+        mockMvc.perform(post("/v1/orders")
+            .contentType(MediaType.APPLICATION_JSON)
+            .requestAttr("memberId", memberId.toString())
+            .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value(ErrorCode.OUT_OF_STOCK.getMessage()));
+    }
+
+    @Test
+    void 주문_생성_실패_상품없음() throws Exception {
+        OrderRequestDto request = OrderRequestDto.builder()
+            .productId(productId)
+            .build();
+
+        when(orderService.createOrder(any(), any()))
+            .thenThrow(new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        mockMvc.perform(post("/v1/orders")
+            .contentType(MediaType.APPLICATION_JSON)
+            .requestAttr("memberId", memberId.toString())
+            .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value(ErrorCode.PRODUCT_NOT_FOUND.getMessage()));
     }
 }
