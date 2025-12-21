@@ -107,4 +107,21 @@ public class OrderControllerTest {
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.message").value(ErrorCode.PRODUCT_NOT_FOUND.getMessage()));
     }
+
+    @Test
+    void 주문_생성_실패_중복주문() throws Exception {
+        OrderRequestDto request = OrderRequestDto.builder()
+            .productId(productId)
+            .build();
+
+        when(orderService.createOrder(any(), any()))
+            .thenThrow(new CustomException(ErrorCode.ALREADY_PURCHASED));
+
+        mockMvc.perform(post("/v1/orders")
+            .contentType(MediaType.APPLICATION_JSON)
+            .requestAttr("memberId", memberId.toString())
+            .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.message").value(ErrorCode.ALREADY_PURCHASED.getMessage()));
+    }
 }
