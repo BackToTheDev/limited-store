@@ -55,4 +55,10 @@ public class ProductController {
     public void deleteProduct(@PathVariable("id") UUID id) {
         productService.deleteProduct(id);
     }
+
+
+    @GetMapping("/{id}/exists")
+    public boolean exists(@PathVariable UUID id) {
+        return productService.exists(id);
+    }
 }

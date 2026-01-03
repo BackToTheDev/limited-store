@@ -5,6 +5,7 @@ import com.supersonic.limitedstore.common.exception.CustomException;
 import com.supersonic.limitedstore.common.exception.ErrorCode;
 import com.supersonic.limitedstore.domain.order.entity.Order;
 import com.supersonic.limitedstore.domain.order.entity.OrderStatus;
+import com.supersonic.limitedstore.domain.order.infrastructure.client.ProductClient;
 import com.supersonic.limitedstore.domain.order.presentation.dto.req.OrderRequestDto;
 import com.supersonic.limitedstore.domain.order.presentation.dto.res.OrderResponseDto;
 import com.supersonic.limitedstore.domain.order.repository.OrderEventLogRepository;
@@ -37,6 +38,9 @@ public class OrderServiceTest {
 
     @Mock
     private ProductRepository productRepository;
+
+    @Mock
+    private ProductClient productClient;
 
     @Mock
     private OrderEventLogRepository orderEventLogRepository;
@@ -89,8 +93,8 @@ public class OrderServiceTest {
             .productId(productId)
             .build();
 
-        when(productRepository.findByIdAndIsDeletedFalse(productId))
-            .thenReturn(Optional.empty());
+        when(productClient.exists(any(UUID.class)))
+        .thenReturn(false);
 
         assertThatThrownBy(() ->
             orderService.createOrder(memberId, dto))

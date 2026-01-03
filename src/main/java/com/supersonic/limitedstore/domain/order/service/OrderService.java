@@ -6,6 +6,7 @@ import com.supersonic.limitedstore.common.exception.ErrorCode;
 import com.supersonic.limitedstore.domain.order.entity.Order;
 import com.supersonic.limitedstore.domain.order.entity.OrderEventLog;
 import com.supersonic.limitedstore.domain.order.entity.OrderStatus;
+import com.supersonic.limitedstore.domain.order.infrastructure.client.ProductClient;
 import com.supersonic.limitedstore.domain.order.presentation.dto.req.OrderRequestDto;
 import com.supersonic.limitedstore.domain.order.presentation.dto.res.OrderResponseDto;
 import com.supersonic.limitedstore.domain.order.repository.OrderEventLogRepository;
@@ -24,14 +25,31 @@ import org.springframework.web.bind.annotation.RequestBody;
 @RequiredArgsConstructor
 public class OrderService {
 
+    /**
+     * OrderService는 현재 모놀리식 -> MSA 전환 과도기 상태
+     *
+     * - 상품 존재 여부 : ProductClient (외부 서비스 책임)
+     * - 재고 확인/차감 : ProductRepository (로컬 트랜젝션 유지)
+     *
+     * 재고 차감 API 분리 시 Product 엔티티 및 Repository 의존은 제거
+     */
+
+
     private final OrderRepository orderRepository;
     private final OrderEventLogRepository orderEventLogRepository;
-    private final ProductRepository productRepository;
+    private final ProductRepository productRepository; // 재고 차감 API 분리 시 제거 예정
+    private final ProductClient productClient;
 
     @Transactional
     public ApiResponse<OrderResponseDto> createOrder(UUID memberId, OrderRequestDto dto) {
 
-        //상품 조회
+        UUID productId = dto.getProductId();
+
+        if (!productClient.exists(productId)) {
+            throw new CustomException(ErrorCode.PRODUCT_NOT_FOUND);
+        }
+
+        // 재고 차감 API 분리 시 productRepository 제거 예정
         Product product = productRepository.findByIdAndIsDeletedFalse(dto.getProductId())
             .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
 
@@ -53,7 +71,9 @@ public class OrderService {
         Order order = Order.create(memberId, dto.getProductId());
         orderRepository.save(order);
 
-        // 재고 차감
+        // 현재 재고 차감은 OrderCreate 내부에 존재
+        // 이는 모놀리식 구조를 유지하기 위한 과도기 상태이며,
+        // 재고 차감 API(Product 서비스) 분리 시 제거 예정
         product.decreaseStock();
         productRepository.save(product);
 

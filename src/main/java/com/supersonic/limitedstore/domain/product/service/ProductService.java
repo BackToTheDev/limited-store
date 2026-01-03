@@ -111,4 +111,8 @@ public class ProductService {
         productRepository.save(product);
     }
 
+    public boolean exists(UUID productId) {
+        return productRepository.existsById(productId);
+    }
+
 }
