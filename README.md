@@ -27,3 +27,24 @@ Limited Store는 한정 수량 상품 주문을 가정한 개인 백엔드 프�
 - JWT 인증 필터는 통과되었다고 가정하고 requestAttr로 인증 정보를 주입
 - Service에서 발생한 예외가 GlobalExceptionHandler를 통해
   HTTP 상태 코드와 공통 응답 포맷으로 변환되는지 검증
+
+## Why Order ↔ Product Only(MSA Transition)
+본 프로젝트는 완전한 MSA 구현이 목적이 아니라,
+서비스 분리 기준과 책임 경계를 설명할 수 있는 구조를 만드는 것을 목표로 했습니다.
+
+### 왜 Order ↔ Product만 분리했는가
+- 주문 생성 시 Order의 상품의 존재 여부와 재고 상태에 의존합니다.
+- 이에 따라 상품의 존재 여부 판단 책임을 Product 서비스로 분리했습니다.
+
+### 현재 구조 (과도기 상태)
+- 상품 존재 여부: Product 서비스 책임 (Feign Client 통신)
+- 재고 확인 및 차감: 모놀리식 트랜젝션 유지
+
+이는 모놀리식에서 MSA로 전환하는 과도기적 구조로,
+재고 차감 API 분리 시 Product 엔티티 및 Repository 의존을 제거할 수 있도록
+구조를 의도적으로 열어두었습니다.
+
+### 목표가 아닌 것
+- 완전한 MSA 구성
+- Gateway, Eureka 등 인프라 구성
+- 분산 트랜젝션 처리
