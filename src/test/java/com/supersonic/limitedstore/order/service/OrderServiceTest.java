@@ -68,6 +68,9 @@ public class OrderServiceTest {
             .stock(10)
             .build();
 
+        when(productClient.exists(productId))
+            .thenReturn(true);
+
         when(productRepository.findByIdAndIsDeletedFalse(productId))
             .thenReturn(Optional.of(product));
 
@@ -113,6 +116,9 @@ public class OrderServiceTest {
             .stock(0)
             .build();
 
+        when(productClient.exists(productId))
+            .thenReturn(true);
+
         when(productRepository.findByIdAndIsDeletedFalse(productId))
             .thenReturn(Optional.of(product));
 
@@ -132,6 +138,9 @@ public class OrderServiceTest {
             .id(productId)
             .stock(10)
             .build();
+
+        when(productClient.exists(productId))
+            .thenReturn(true);
 
         when(productRepository.findByIdAndIsDeletedFalse(productId))
             .thenReturn(Optional.of(product));
