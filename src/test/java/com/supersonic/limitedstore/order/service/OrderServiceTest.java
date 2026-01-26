@@ -96,7 +96,7 @@ public class OrderServiceTest {
             .productId(productId)
             .build();
 
-        when(productClient.exists(any(UUID.class)))
+        when(productClient.exists(productId))
         .thenReturn(false);
 
         assertThatThrownBy(() ->
