@@ -12,7 +12,7 @@ Limited Store는 한정 수량 상품 주문 시 발생하는 책임 분리, 정
 
 ## 기술 스택
 - Java 17  
-- Spring Boot 3.3.x  
+- Spring Boot 3.3.5  
 - Spring Data JPA  
 - Spring Security + JWT  
 - JUnit5 / Mockito  
