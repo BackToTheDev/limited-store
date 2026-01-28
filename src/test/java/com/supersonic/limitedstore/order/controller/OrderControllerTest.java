@@ -104,7 +104,7 @@ public class OrderControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .requestAttr("memberId", memberId.toString())
             .content(objectMapper.writeValueAsString(request)))
-            .andExpect(status().isBadRequest())
+            .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.message").value(ErrorCode.PRODUCT_NOT_FOUND.getMessage()));
     }
 
