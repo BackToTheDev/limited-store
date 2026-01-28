@@ -82,6 +82,6 @@ flowchart LR
   end
 
   Client --> OrderService
-  OrderService -->|Feign: exists(productId)| ProductService
-  OrderService -->|Local Transaction| ProductRepository
-
+  OrderService -->|Feign exists| ProductService
+  OrderService -->|Local transaction| ProductRepository
+```
