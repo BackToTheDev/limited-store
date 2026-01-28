@@ -70,18 +70,18 @@ Controller Test는 시스템이 외부에 실패를 어떻게 표현하는가를
 
 ```mermaid
 flowchart LR
+  Client[Client / Frontend]
 
-Client[Client / Frontend]
-
-subgraph Monolith Phase
+  subgraph Monolith_Phase[Monolith Phase]
     OrderService[Order Service]
     ProductRepository[(Product Repository)]
-end
+  end
 
-subgraph MSA Phase (Transition)
+  subgraph MSA_Transition[MSA Phase - Transition]
     ProductService[Product Service]
-end
+  end
 
-Client --> OrderService
-OrderService -->|Feign: exists(productId)| ProductService
-OrderService -->|Local Transaction| ProductRepository
+  Client --> OrderService
+  OrderService -->|Feign: exists(productId)| ProductService
+  OrderService -->|Local Transaction| ProductRepository
+
