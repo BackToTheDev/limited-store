@@ -85,3 +85,9 @@ flowchart LR
   OrderService -->|Feign exists| ProductService
   OrderService -->|Local transaction| ProductRepository
 ```
+---
+### 트랜잭션 경계 한 문장 요약
+
+주문 생성은 “상품 존재 확인 → 재고 확인 → 주문 생성 → 재고 차감”이  
+하나의 성공 단위로 묶이며,  
+Product 상태를 신뢰할 수 없는 경우 전체 트랜잭션을 실패시킵니다.
