@@ -148,15 +148,6 @@ http://localhost:8080/swagger-ui.html
 
 ---
 
-
-## Project Positioning
-이 프로젝트는 “완성된 MSA 구현”이 아니라,  
-**MSA로 전환하기 전 단계에서 어떤 책임을 먼저 분리해야 하는지,  
-그리고 통신 실패를 어떻게 비즈니스 실패로 해석해야 하는지를  
-코드와 테스트로 설명하는 설계 중심 프로젝트입니다.**
-
----
-
 ## Next Step (Planned)
 - 재고 API 분리 (Product → Inventory Service)
 - 서비스 간 실패 정책 명문화 (Timeout / Fallback 전략)
