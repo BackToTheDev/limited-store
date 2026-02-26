@@ -1,158 +1,187 @@
 # Limited Store
 
-> 이 프로젝트는 “완성된 MSA 구현”이 아니라,  
-> MSA로 전환하기 전 단계에서 **어떤 책임을 먼저 분리해야 하는지**,  
-> 그리고 **통신 실패를 어떻게 비즈니스 실패로 해석해야 하는지**를  
-> 코드와 테스트로 설명하는 **설계 중심 백엔드 프로젝트**입니다.
+한정 수량 상품 주문 과정에서 발생할 수 있는 재고 정합성 문제와 트랜잭션 경계를 설계 관점에서 검증하기 위한 개인 백엔드 프로젝트입니다.
+
+이 프로젝트의 목적은 완성된 MSA 구현이 아니라,  
+서비스를 언제 분리해야 하는지와 재고 변경이 있는 도메인을 어디까지 하나의 트랜잭션으로 묶어야 하는지를 코드와 테스트로 설명하는 것입니다.
 
 ---
 
-## 프로젝트 개요
-Limited Store는 한정 수량 상품 주문 시 발생하는 **책임 분리, 정합성, 트랜잭션 경계 문제**를 실험하기 위한 개인 백엔드 프로젝트입니다.  
-모놀리식 구조로 CRUD와 비즈니스 로직을 구현한 뒤,  
-테스트와 구조 이해를 중심으로 **Order ↔ Product 영역만 최소 수준으로 분리하는 과도기적 MSA 구조**를 설계했습니다.
+## 1. 프로젝트 개요
 
-본 프로젝트의 목적은 **완성된 MSA가 아니라**,  
-**서비스 분리 기준과 실패 판단을 코드와 테스트로 설명하는 것**입니다.
+Limited Store는 한정 수량 상품 주문 시 발생할 수 있는 다음 문제를 다룹니다.
 
----
+- 재고 변경이 있는 도메인의 데이터 정합성
+- 주문 생성과 재고 차감의 원자성 보장
+- 서비스 분리 기준 설정
+- 예외를 API 응답으로 일관되게 변환하는 구조
 
-## 기술 스택
-- Java 17  
-- Spring Boot 3.3.5  
-- Spring Data JPA  
-- Spring Security + JWT  
-- JUnit5 / Mockito  
-- Spring MVC Test  
-- Spring Cloud OpenFeign  
-- Swagger (springdoc)
+모놀리식 기반으로 주문과 재고 로직을 구현한 후,  
+상품 존재 여부 확인만 외부 서비스로 분리한 과도기적 구조를 설계했습니다.
 
 ---
 
-## 설계 목표
+## 2. 기술 스택
 
-### Out of Scope
-- 완전한 MSA 아키텍처
-- API Gateway / Service Discovery / Circuit Breaker
-- Saga / 분산 트랜잭션
-
-### In Scope
-- 서비스 분리 기준을 설명할 수 있는 구조 설계
-- Order ↔ Product 간 책임 경계 명확화
-- 통신 실패 시 비즈니스 실패 판단 기준 정의
-- 확장 가능한 과도기 구조 유지
+- Java 17
+- Spring Boot 3.3.5
+- Spring Data JPA
+- Spring Security + JWT
+- Spring Cloud OpenFeign
+- JUnit5 / Mockito
+- Spring MVC Test
+- PostgreSQL / H2
+- Docker
 
 ---
 
-## 테스트 전략
-본 프로젝트에서는 **계층별 책임을 검증하는 테스트 구조**를 사용합니다.
+## 3. 핵심 설계
 
-### Service Test — “시스템이 언제 실패해야 하는가”
-- 비즈니스 규칙 및 도메인 로직 검증
-- Repository 및 외부 통신(Feign Client) Mockito Mock 처리
-- **주요 검증 항목**
+### 3.1 서비스 분리 기준
+
+상품 존재 여부 확인은 외부 Product Service로 분리했습니다.
+
+```java
+if (!productClient.exists(productId)) {
+    throw new CustomException(ErrorCode.PRODUCT_NOT_FOUND);
+}
+```
+
+존재 여부는 상태 변경이 없는 읽기 성격의 책임이기 때문에  
+분리 비용이 낮다고 판단했습니다.
+
+반면, 재고는 상태 변경이 발생하는 영역이므로  
+현재 단계에서는 주문 생성과 함께 로컬 트랜잭션으로 묶었습니다.
+
+---
+
+### 3.2 트랜잭션 경계
+
+주문 생성 로직은 `@Transactional`로 묶여 있습니다.
+
+```java
+@Transactional
+public ApiResponse<OrderResponseDto> createOrder(UUID memberId, OrderRequestDto dto)
+```
+
+주문 생성 과정은 다음 순서로 진행됩니다.
+
+1. 상품 존재 여부 확인 (외부 서비스)
+2. 재고 확인
+3. 중복 주문 확인
+4. 주문 생성
+5. 재고 차감
+6. 주문 이벤트 로그 저장
+
+이 중 하나라도 예외가 발생하면 전체 작업은 롤백됩니다.
+
+이를 통해 다음을 보장합니다.
+
+- 재고 음수 방지
+- 주문만 생성되고 재고가 차감되지 않는 상태 방지
+- 부분 성공 데이터 차단
+
+---
+
+### 3.3 재고 감소 로직
+
+재고는 엔티티 내부에서 직접 감소시키며,  
+0 이하일 경우 예외를 발생시킵니다.
+
+```java
+public void decreaseStock() {
+    if (this.stock <= 0) {
+        throw new CustomException(ErrorCode.OUT_OF_STOCK);
+    }
+    this.stock -= 1;
+}
+```
+
+### 3.4 예외 처리 구조
+
+도메인 예외는 `CustomException`으로 정의하고,  
+`GlobalExceptionHandler`를 통해 일관된 API 응답으로 변환합니다.
+
+```java
+@ExceptionHandler(CustomException.class)
+public ResponseEntity<?> handleCustomException(CustomException e) {
+    // ...
+}
+```
+
+`ErrorCode`는 HTTP 상태 코드와 메시지를 함께 정의합니다.
+
+예:
+
+- `PRODUCT_NOT_FOUND` → 404
+- `OUT_OF_STOCK` → 400
+- `ALREADY_PURCHASED` → 409
+
+이를 통해 내부 도메인 예외와 외부 API 계약을 분리했습니다.
+
+---
+
+## 4. Failure Flow
+
+### 상품 미존재
+- Product Service에서 존재 여부 false
+- `PRODUCT_NOT_FOUND` 예외 발생
+- HTTP 404 반환
+
+### 재고 부족
+- 재고 수량이 0 이하
+- `OUT_OF_STOCK` 예외 발생
+- HTTP 400 반환
+
+### 중복 주문
+- 동일 회원이 동일 상품을 재주문
+- `ALREADY_PURCHASED` 예외 발생
+- HTTP 409 반환
+
+### 트랜잭션 내부 실패
+- 주문 저장 또는 재고 저장 중 예외 발생
+- 전체 롤백
+
+---
+
+## 5. 테스트 전략
+
+### Service Test
+- 비즈니스 규칙 단위 검증
   - 상품 미존재
   - 재고 부족
   - 중복 주문
-  - 정상 주문 생성
-  - 주문 취소
+  - 정상 주문
+- 예외 발생 시 롤백 검증
 
-Service Test는  
-**시스템이 어떤 조건에서 성공하거나 실패해야 하는지**를 검증하는 계층입니다.
+Repository 및 Feign Client는 Mock 처리하여  
+도메인 로직에 집중합니다.
 
-### Controller Test — “실패를 어떻게 외부에 표현하는가”
-- Spring MVC 관점에서 요청/응답 흐름 검증
-- `@WebMvcTest` 기반으로 Controller 계층만 로딩
+### Controller Test
+- API 계약 검증
+- `@WebMvcTest` 기반 테스트
 - Service는 `@MockitoBean`으로 대체
-- JWT 인증은 통과되었다고 가정하고  
-  `requestAttr("memberId")`로 인증 정보 주입
-- `GlobalExceptionHandler`를 통해  
-  HTTP 상태 코드 및 공통 응답 포맷 변환 여부 검증
-
-Controller Test는  
-**시스템 내부 실패가 외부 API 계약으로 어떻게 표현되는지**를 검증합니다.
+- `GlobalExceptionHandler` 기반 상태 코드 검증
+- JWT는 `requestAttr("memberId")`로 인증 가정
 
 ---
 
-## MSA Transition Structure (Order ↔ Product)
-아래 구조는 모놀리식에서 MSA로 전환하는 **과도기적 설계 상태**를 나타냅니다.  
-현재는 **상품 존재 여부만 Product 서비스로 분리**하고,  
-**재고 확인 및 차감은 로컬 트랜잭션으로 유지**하고 있습니다.
+## 6. 현재 한계
 
-```mermaid
-flowchart LR
-  Client[Client / Frontend]
+- 재고는 로컬 트랜잭션 기반으로 처리
+- 동시성 제어 전략은 별도 구현하지 않음
+- Feign 통신 실패에 대한 세부 재시도 정책은 적용하지 않음
 
-  subgraph Monolith_Phase[Monolith Phase]
-    OrderService[Order Service]
-    ProductRepository[(Product Repository)]
-  end
+향후 확장 시 다음을 고려할 수 있습니다.
 
-  subgraph MSA_Transition[MSA Phase - Transition]
-    ProductService[Product Service]
-  end
-
-  Client --> OrderService
-  OrderService -->|Feign exists| ProductService
-  OrderService -->|Local transaction| ProductRepository
-```
+- 재고 서비스 분리
+- 동시성 제어 전략 적용
+- 서비스 간 실패 정책 명문화
 
 ---
 
-## Failure Flow (실패 흐름 매핑)
+## 7. 실행 방법
 
-### Product 미존재 → 주문 생성 이전 실패
-- **Code**: `OrderService#createOrder()` → `productClient.exists(productId)`
-- **Action**: `throw CustomException(PRODUCT_NOT_FOUND)`
-
-### Product 통신 실패 → 주문 생성 이전 실패
-- **Code**: `OrderService#createOrder()` → `productClient.exists(productId)`
-- **Design**: Feign 호출 예외 (`FeignException`, `RetryableException`)는  
-  Product 상태를 신뢰할 수 없는 상태로 간주하여 **비즈니스 실패로 처리**
-
-### 재고 부족 → 주문 생성 이전 실패
-- **Code**: `OrderService#createOrder()` → 재고 검증
-- **Action**: `throw CustomException(OUT_OF_STOCK)`
-
-### 재고 차감 / 저장 실패 → 전체 트랜잭션 롤백
-- **Code**: `OrderService#createOrder()` → `product.decreaseStock()` → `productRepository.save(product)`
-- **Design**: Spring 트랜잭션 경계 내 영속성 예외 발생 시  
-  주문 생성과 재고 변경을 **하나의 원자적 작업으로 롤백**
-
----
-
-## 트랜잭션 경계 (One-Line Rule)
-주문 생성은  
-**상품 존재 확인 → 재고 확인 → 주문 생성 → 재고 차감**  
-을 하나의 성공 단위로 묶으며,  
-Product 상태를 신뢰할 수 없는 경우 **전체 트랜잭션을 실패**시킵니다.
-
----
-## How to Run
-
-
-
-### Requirements
-- Java 17
-- (Optional) Docker
-- PostgreSQL or H2
-
-### Run
 ```bash
 ./gradlew test
 ./gradlew bootRun
-```
-
-### API Docs
-http://localhost:8080/swagger-ui.html
-
----
-
-## Next Step (Planned)
-- 재고 API 분리 (Product → Inventory Service)
-- 서비스 간 실패 정책 명문화 (Timeout / Fallback 전략)
-- 통합 테스트 기반 서비스 경계 검증
-
-
-
-  
