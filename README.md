@@ -1,87 +1,221 @@
 # Limited Store
 
-## 프로젝트 개요
-Limited Store는 한정 수량 상품 주문 시 발생하는 책임 분리, 정합성, 트랜잭션 경계 문제를 실험하기 위한 개인 백엔드 프로젝트입니다.  
-모놀리식 구조로 CRUD와 비즈니스 로직을 구현한 뒤,  
-테스트와 구조 이해를 중심으로 Order ↔ Product 영역만 최소 수준으로 분리하는 과도기적 MSA 구조를 설계했습니다.
+한정 수량 상품 주문 과정에서 발생할 수 있는 재고 정합성 문제와 트랜잭션 경계를 설계 관점에서 검증하기 위한 개인 백엔드 프로젝트입니다.
 
-본 프로젝트의 목적은 완성된 MSA가 아니라,  
-서비스 분리 기준과 실패 판단을 코드와 테스트로 설명하는 것입니다.
+이 프로젝트의 목적은 완성된 MSA 구현이 아니라,  
+서비스를 언제 분리해야 하는지와 재고 변경이 있는 도메인을 어디까지 하나의 트랜잭션으로 묶어야 하는지를 코드와 테스트로 설명하는 것입니다.
 
 ---
 
-## 기술 스택
-- Java 17  
-- Spring Boot 3.3.5  
-- Spring Data JPA  
-- Spring Security + JWT  
-- JUnit5 / Mockito  
-- Spring MVC Test  
-- Spring Cloud OpenFeign  
-- Swagger (springdoc)
+## 1. 프로젝트 개요
+
+Limited Store는 한정 수량 상품 주문 시 발생할 수 있는 다음 문제를 다룹니다.
+
+- 재고 변경이 있는 도메인의 데이터 정합성
+- 주문 생성과 재고 차감의 원자성 보장
+- 서비스 분리 기준 설정
+- 예외를 API 응답으로 일관되게 변환하는 구조
+
+모놀리식 기반으로 주문과 재고 로직을 구현한 후,  
+상품 존재 여부 확인만 외부 서비스로 분리한 과도기적 구조를 설계했습니다.
 
 ---
 
-## 설계 목표
+## 2. 기술 스택
 
-### 목표 아님
-- 완전한 MSA 아키텍처
-- API Gateway / Service Discovery / Circuit Breaker
-- Saga / 분산 트랜잭션
-
-### 목표
-- 서비스 분리 기준을 설명할 수 있는 구조 설계
-- Order ↔ Product 간 책임 경계 명확화
-- 통신 실패 시 비즈니스 판단 기준 정의
-- 확장 가능한 과도기 구조 유지
+- Java 17
+- Spring Boot 3.3.5
+- Spring Data JPA
+- Spring Security + JWT
+- Spring Cloud OpenFeign
+- JUnit5 / Mockito
+- Spring MVC Test
+- PostgreSQL / H2
+- Docker / Docker Compose
 
 ---
 
-## 테스트 전략
-본 프로젝트에서는 계층별 책임을 검증하는 테스트 구조를 사용합니다.
+## 3. 핵심 설계
+
+### 3.1 서비스 분리 기준
+
+상품 존재 여부 확인은 외부 Product Service로 분리했습니다.
+
+```java
+if (!productClient.exists(productId)) {
+    throw new CustomException(ErrorCode.PRODUCT_NOT_FOUND);
+}
+```
+
+존재 여부는 상태 변경이 없는 읽기 성격의 책임이기 때문에  
+분리 비용이 낮다고 판단했습니다.
+
+반면, 재고는 상태 변경이 발생하는 영역이므로  
+현재 단계에서는 주문 생성과 함께 로컬 트랜잭션으로 묶었습니다.
+
+---
+
+### 3.2 트랜잭션 경계
+
+주문 생성 로직은 `@Transactional`로 묶여 있습니다.
+
+```java
+@Transactional
+public ApiResponse<OrderResponseDto> createOrder(UUID memberId, OrderRequestDto dto)
+```
+
+주문 생성 과정은 다음 순서로 진행됩니다.
+
+1. 상품 존재 여부 확인 (외부 서비스)
+2. 재고 확인
+3. 중복 주문 확인
+4. 주문 생성
+5. 재고 차감
+6. 주문 이벤트 로그 저장
+
+이 중 하나라도 예외가 발생하면 전체 작업은 롤백됩니다.
+
+이를 통해 다음을 보장합니다.
+
+- 재고 음수 방지
+- 주문만 생성되고 재고가 차감되지 않는 상태 방지
+- 부분 성공 데이터 차단
+
+---
+
+### 3.3 재고 감소 로직
+
+재고는 엔티티 내부에서 직접 감소시키며,  
+0 이하일 경우 예외를 발생시킵니다.
+
+```java
+public void decreaseStock() {
+    if (this.stock <= 0) {
+        throw new CustomException(ErrorCode.OUT_OF_STOCK);
+    }
+    this.stock -= 1;
+}
+```
+
+### 3.4 예외 처리 구조
+
+도메인 예외는 `CustomException`으로 정의하고,  
+`GlobalExceptionHandler`를 통해 일관된 API 응답으로 변환합니다.
+
+```java
+@ExceptionHandler(CustomException.class)
+public ResponseEntity<?> handleCustomException(CustomException e) {
+    // ...
+}
+```
+
+`ErrorCode`는 HTTP 상태 코드와 메시지를 함께 정의합니다.
+
+예:
+
+- `PRODUCT_NOT_FOUND` → 404
+- `OUT_OF_STOCK` → 400
+- `ALREADY_PURCHASED` → 409
+
+이를 통해 내부 도메인 예외와 외부 API 계약을 분리했습니다.
+
+---
+
+## 4. Failure Flow
+
+### 상품 미존재
+- Product Service에서 존재 여부 false
+- `PRODUCT_NOT_FOUND` 예외 발생
+- HTTP 404 반환
+
+### 재고 부족
+- 재고 수량이 0 이하
+- `OUT_OF_STOCK` 예외 발생
+- HTTP 400 반환
+
+### 중복 주문
+- 동일 회원이 동일 상품을 재주문
+- `ALREADY_PURCHASED` 예외 발생
+- HTTP 409 반환
+
+### 트랜잭션 내부 실패
+- 주문 저장 또는 재고 저장 중 예외 발생
+- 전체 롤백
+
+---
+
+## 5. 테스트 전략
 
 ### Service Test
-- 비즈니스 규칙 및 도메인 로직 검증
-- Repository 및 외부 통신(Feign Client) Mockito Mock 처리
-- 검증 항목:
-  - 상품 미존재
-  - 재고 부족
-  - 중복 주문
-  - 정상 주문 생성 / 취소
+- 비즈니스 규칙 단위 검증
+    - 상품 미존재
+    - 재고 부족
+    - 중복 주문
+    - 정상 주문
+- 예외 발생 시 롤백 검증
 
-Service Test는 시스템이 어떤 규칙으로 실패해야 하는가를 검증하는 계층입니다.
+Repository 및 Feign Client는 Mock 처리하여  
+도메인 로직에 집중합니다.
 
 ### Controller Test
-- Spring MVC 관점에서 요청/응답 흐름 검증
-- @WebMvcTest 기반으로 Controller 계층만 로딩
-- Service는 @MockitoBean으로 대체
-- JWT 인증은 통과되었다고 가정하고 requestAttr("memberId")로 인증 정보 주입
-- GlobalExceptionHandler를 통해 HTTP 상태 코드와 공통 응답 포맷 변환 여부 검증
-
-Controller Test는 시스템이 외부에 실패를 어떻게 표현하는가를 검증합니다.
+- API 계약 검증
+- `@WebMvcTest` 기반 테스트
+- Service는 `@MockitoBean`으로 대체
+- `GlobalExceptionHandler` 기반 상태 코드 검증
+- JWT는 `requestAttr("memberId")`로 인증 가정
 
 ---
 
-## MSA Transition Structure (Order ↔ Product)
+## 6. 의도된 설계 선택 및 향후 확장성
 
-아래 구조는 모놀리식에서 MSA로 전환하는 과도기적 설계 상태를 나타냅니다.  
-현재는 상품 존재 여부만 Product 서비스로 분리하고,  
-재고 확인 및 차감은 로컬 트랜잭션으로 유지하고 있습니다.
+현재 구조는 완전한 MSA가 아닌, 모놀리식 기반에서 점진적으로 분리해나가는 과도기적 구조를 전제로 설계했습니다.
 
-```mermaid
-flowchart LR
+데이터 정합성을 최우선으로 고려하여 주문 생성과 재고 차감을 하나의 로컬 트랜잭션으로 처리했습니다.
 
-Client[Client / Frontend]
+이는 분산 환경에서 발생할 수 있는 복잡도를 줄이고, 비즈니스 실패를 명확하게 관리하기 위한 의도된 선택입니다.
 
-subgraph Monolith Phase
-    OrderService[Order Service]
-    ProductRepository[(Product Repository)]
-end
+현재는 다음과 같은 부분을 의도적으로 단순화했습니다.
 
-subgraph MSA Phase (Transition)
-    ProductService[Product Service]
-end
+- 재고는 로컬 트랜잭션 기반 처리
+- 동시성 제어 미적용
+- Feign 통신 실패 재시도 정책 미적용
 
-Client --> OrderService
-OrderService -->|Feign: exists(productId)| ProductService
-OrderService -->|Local Transaction| ProductRepository
+향후 확장 시에는 다음과 같은 방향을 고려하고 있습니다.
+
+- 재고 서비스 분리
+- Saga 패턴 또는 Outbox 패턴 기반 분산 트랜잭션 처리
+- 낙관적 락 / 비관적 락 / 분산 락을 통한 동시성 제어
+- 서비스 간 실패 정책 명문화
+
+---
+
+## 7. 실행 방법
+
+Docker Compose를 사용하여 애플리케이션과 PostgreSQL을 함께 실행합니다.
+
+```bash
+docker compose up -d --build
+```
+- `-d` 옵션을 통해 컨테이너를 백그라운드로 실행
+- 애플리케이션과 DB를 동일 네트워크에서 연결
+
+로그 확인
+```bash
+docker compose logs -f
+```
+
+---
+
+## 8. 실행 검증
+- Docker Compose로 앱 컨테이너와 PostgreSQL 컨테이너 동시 실행
+- 컨테이너 간 네트워크를 통한 DB 연결 확인
+- Spring Boot 애플리케이션 정상 구동 확인
+- Swagger UI에서 API 호출 성공 확인
+
+애플리케이션과 DB 컨테이너가 독립된 네트워크 환경에서 정상적으로 실행된 것을 확인했습니다.
+<img width="618" height="98" alt="image" src="https://github.com/user-attachments/assets/082967eb-afb1-490e-873b-9329ec4429ad" />
+
+
+정의된 API 계약에 따라 회원가입 로직이 정상적으로 수행되고, 200 SUCCESS 응답이 반환되는 것을 확인했습니다.
+<img width="1767" height="418" alt="image" src="https://github.com/user-attachments/assets/eaefa007-d854-4dc9-bdf8-3bea375c657f" />
+<img width="1757" height="247" alt="image" src="https://github.com/user-attachments/assets/1bfa6dbd-9187-4092-b230-1984b8489bab" />
