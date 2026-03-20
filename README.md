@@ -166,18 +166,26 @@ Repository 및 Feign Client는 Mock 처리하여
 
 ---
 
-## 6. 현재 한계
+## 6. 의도된 설계 선택 및 향후 확장성
 
-- 재고는 로컬 트랜잭션 기반으로 처리
-- 동시성 제어 미구현
+현재 구조는 완전한 MSA가 아닌, 모놀리식 기반에서 점진적으로 분리해나가는 과도기적 구조를 전제로 설계했습니다.
+
+데이터 정합성을 최우선으로 고려하여 주문 생성과 재고 차감을 하나의 로컬 트랜잭션으로 처리했습니다.
+
+이는 분산 환경에서 발생할 수 있는 복잡도를 줄이고, 비즈니스 실패를 명확하게 관리하기 위한 의도된 선택입니다.
+
+현재는 다음과 같은 부분을 의도적으로 단순화했습니다.
+
+- 재고는 로컬 트랜잭션 기반 처리
+- 동시성 제어 미적용
 - Feign 통신 실패 재시도 정책 미적용
 
-향후 확장 시 다음을 고려할 수 있습니다.
+향후 확장 시에는 다음과 같은 방향을 고려하고 있습니다.
 
 - 재고 서비스 분리
-- 동시성 제어 전략 적용
+- Saga 패턴 또는 Outbox 패턴 기반 분산 트랜잭션 처리
+- 낙관적 락 / 비관적 락 / 분산 락을 통한 동시성 제어
 - 서비스 간 실패 정책 명문화
-- 배포 환경 확
 
 ---
 
@@ -188,7 +196,7 @@ Docker Compose를 사용하여 애플리케이션과 PostgreSQL을 함께 실행
 ```bash
 docker compose up -d --build
 ```
-- -d 옵션을 통해 컨테이너를 백그라운드로 실행
+- `-d` 옵션을 통해 컨테이너를 백그라운드로 실행
 - 애플리케이션과 DB를 동일 네트워크에서 연결
   
 로그 확인
@@ -203,7 +211,12 @@ docker compose logs -f
 - 컨테이너 간 네트워크를 통한 DB 연결 확인
 - Spring Boot 애플리케이션 정상 구동 확인
 - Swagger UI에서 API 호출 성공 확인
-  <img width="1790" height="133" alt="image" src="https://github.com/user-attachments/assets/455dc667-0006-49de-97fa-6883caaf8b7f" />
+
+애플리케이션과 DB 컨테이너가 독립된 네트워크 환경에서 정상적으로 실행된 것을 확인했습니다.
+  <img width="618" height="98" alt="image" src="https://github.com/user-attachments/assets/082967eb-afb1-490e-873b-9329ec4429ad" />
+
+
+정의된 API 계약에 따라 회원가입 로직이 정상적으로 수행되고, 200 SUCCESS 응답이 반환되는 것을 확인했습니다.
   <img width="1767" height="418" alt="image" src="https://github.com/user-attachments/assets/eaefa007-d854-4dc9-bdf8-3bea375c657f" />
   <img width="1757" height="247" alt="image" src="https://github.com/user-attachments/assets/1bfa6dbd-9187-4092-b230-1984b8489bab" />
 
