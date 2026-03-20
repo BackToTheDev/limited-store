@@ -199,7 +199,7 @@ docker compose logs -f
 ---
 
 ## 8. 실행 검증
-- Docker Compose로 앱 컨테이너와 PostgresSQL 컨테이너 동시 실행
+- Docker Compose로 앱 컨테이너와 PostgreSQL 컨테이너 동시 실행
 - 컨테이너 간 네트워크를 통한 DB 연결 확인
 - Spring Boot 애플리케이션 정상 구동 확인
 - Swagger UI에서 API 호출 성공 확인
