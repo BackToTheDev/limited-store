@@ -31,7 +31,7 @@ Limited Store는 한정 수량 상품 주문 시 발생할 수 있는 다음 문
 - JUnit5 / Mockito
 - Spring MVC Test
 - PostgreSQL / H2
-- Docker
+- Docker / Docker Compose
 
 ---
 
@@ -169,19 +169,42 @@ Repository 및 Feign Client는 Mock 처리하여
 ## 6. 현재 한계
 
 - 재고는 로컬 트랜잭션 기반으로 처리
-- 동시성 제어 전략은 별도 구현하지 않음
-- Feign 통신 실패에 대한 세부 재시도 정책은 적용하지 않음
+- 동시성 제어 미구현
+- Feign 통신 실패 재시도 정책 미적용
 
 향후 확장 시 다음을 고려할 수 있습니다.
 
 - 재고 서비스 분리
 - 동시성 제어 전략 적용
 - 서비스 간 실패 정책 명문화
+- 배포 환경 확
 
 ---
 
 ## 7. 실행 방법
 
+Docker Compose를 사용하여 애플리케이션과 PostgreSQL을 함께 실행합니다.
+
 ```bash
-./gradlew test
-./gradlew bootRun
+docker compose up -d --build
+```
+- -d 옵션을 통해 컨테이너를 백그라운드로 실행
+- 애플리케이션과 DB를 동일 네트워크에서 연결
+  
+로그 확인
+```bash
+docker compose logs -f
+```
+
+---
+
+## 8. 실행 검증
+- Docker Compose로 앱 컨테이너와 PostgresSQL 컨테이너 동시 실행
+- 컨테이너 간 네트워크를 통한 DB 연결 확인
+- Spring Boot 애플리케이션 정상 구동 확인
+- Swagger UI에서 API 호출 성공 확인
+  <img width="1790" height="133" alt="image" src="https://github.com/user-attachments/assets/455dc667-0006-49de-97fa-6883caaf8b7f" />
+  <img width="1767" height="418" alt="image" src="https://github.com/user-attachments/assets/eaefa007-d854-4dc9-bdf8-3bea375c657f" />
+  <img width="1757" height="247" alt="image" src="https://github.com/user-attachments/assets/1bfa6dbd-9187-4092-b230-1984b8489bab" />
+
+
