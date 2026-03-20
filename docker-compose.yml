@@ -11,6 +11,7 @@ services:
       - "5432:5432"
 
   limited-store:
+    build: .
     image: limited-store
     container_name: limited-store-container
     ports:
