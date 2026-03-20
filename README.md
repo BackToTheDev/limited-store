@@ -148,10 +148,10 @@ public ResponseEntity<?> handleCustomException(CustomException e) {
 
 ### Service Test
 - 비즈니스 규칙 단위 검증
-    - 상품 미존재
-    - 재고 부족
-    - 중복 주문
-    - 정상 주문
+  - 상품 미존재
+  - 재고 부족
+  - 중복 주문
+  - 정상 주문
 - 예외 발생 시 롤백 검증
 
 Repository 및 Feign Client는 Mock 처리하여  
@@ -198,7 +198,7 @@ docker compose up -d --build
 ```
 - `-d` 옵션을 통해 컨테이너를 백그라운드로 실행
 - 애플리케이션과 DB를 동일 네트워크에서 연결
-
+  
 로그 확인
 ```bash
 docker compose logs -f
@@ -213,9 +213,9 @@ docker compose logs -f
 - Swagger UI에서 API 호출 성공 확인
 
 애플리케이션과 DB 컨테이너가 독립된 네트워크 환경에서 정상적으로 실행된 것을 확인했습니다.
-<img width="618" height="98" alt="image" src="https://github.com/user-attachments/assets/082967eb-afb1-490e-873b-9329ec4429ad" />
+  <img width="618" height="98" alt="image" src="https://github.com/user-attachments/assets/082967eb-afb1-490e-873b-9329ec4429ad" />
 
 
 정의된 API 계약에 따라 회원가입 로직이 정상적으로 수행되고, 200 SUCCESS 응답이 반환되는 것을 확인했습니다.
-<img width="1767" height="418" alt="image" src="https://github.com/user-attachments/assets/eaefa007-d854-4dc9-bdf8-3bea375c657f" />
-<img width="1757" height="247" alt="image" src="https://github.com/user-attachments/assets/1bfa6dbd-9187-4092-b230-1984b8489bab" />
+  <img width="1767" height="418" alt="image" src="https://github.com/user-attachments/assets/eaefa007-d854-4dc9-bdf8-3bea375c657f" />
+  <img width="1757" height="247" alt="image" src="https://github.com/user-attachments/assets/1bfa6dbd-9187-4092-b230-1984b8489bab" />
