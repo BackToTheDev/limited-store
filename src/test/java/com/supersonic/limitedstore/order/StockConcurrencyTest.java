@@ -2,6 +2,7 @@ package com.supersonic.limitedstore.order;
 
 import com.supersonic.limitedstore.domain.order.infrastructure.client.ProductClient;
 import com.supersonic.limitedstore.domain.order.presentation.dto.req.OrderRequestDto;
+import com.supersonic.limitedstore.domain.order.repository.OrderEventLogRepository;
 import com.supersonic.limitedstore.domain.order.repository.OrderRepository;
 import com.supersonic.limitedstore.domain.order.service.OrderService;
 import com.supersonic.limitedstore.domain.product.entity.Product;
@@ -33,6 +34,9 @@ public class StockConcurrencyTest {
     private OrderRepository orderRepository;
 
     @Autowired
+    private OrderEventLogRepository  orderEventLogRepository;
+
+    @Autowired
     private ProductRepository productRepository;
 
     @MockBean
@@ -40,12 +44,13 @@ public class StockConcurrencyTest {
 
     @BeforeEach
     void setUp() {
+        orderEventLogRepository.deleteAll();
         orderRepository.deleteAll();
         productRepository.deleteAll();
     }
 
     @Test
-    void 동시에_100명_주문시_재고_음수() throws InterruptedException {
+    void 낙관적락_적용후_재고_정합성_보장() throws InterruptedException {
         Product product = Product.builder()
             .name("테스트상품")
             .description("테스트")

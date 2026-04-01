@@ -9,6 +9,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
@@ -28,6 +29,9 @@ public class Product extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column()
     private UUID id;
+
+    @Version
+    private Long version;
 
     @Column(nullable = false, unique = true)
     private String name;
