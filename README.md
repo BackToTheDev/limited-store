@@ -121,6 +121,35 @@ public ResponseEntity<?> handleCustomException(CustomException e) {
 
 ---
 
+### 3.5 동시성 제어
+
+동시 주문 환경에서 재고 정합성이 깨지는 문제를 확인하고,
+낙관적 락을 적용하여 해결했습니다.
+
+**문제 재현**
+- 테스트 조건: 재고 10개 / 동시 요청 100개
+- 낙관적 락 미적용 시 최종 재고 4 (6개 차감 유실)
+
+<img width="688" height="533" alt="스크린샷 2026-04-01 130714" src="https://github.com/user-attachments/assets/097e1411-eea8-4fc7-a5a5-ba26572dac24" />
+
+
+**해결**
+Product 엔티티에 `@Version` 필드를 추가하여 낙관적 락을 적용했습니다.
+
+JPA는 UPDATE 쿼리에 version 조건을 자동으로 추가하며,
+충돌 발생 시 `OptimisticLockException`이 발생하고 트랜잭션이 롤백됩니다.
+```java
+@Version
+private Long version;
+```
+
+- 낙관적 락 적용 후 최종 재고 0 (정합성 보장)
+
+<img width="656" height="462" alt="스크린샷 2026-04-01 130915" src="https://github.com/user-attachments/assets/c622a767-f872-4728-b70f-c45876eacc1a" />
+
+---
+
+
 ## 4. Failure Flow
 
 ### 상품 미존재
@@ -177,14 +206,13 @@ Repository 및 Feign Client는 Mock 처리하여
 현재는 다음과 같은 부분을 의도적으로 단순화했습니다.
 
 - 재고는 로컬 트랜잭션 기반 처리
-- 동시성 제어 미적용
 - Feign 통신 실패 재시도 정책 미적용
 
 향후 확장 시에는 다음과 같은 방향을 고려하고 있습니다.
 
 - 재고 서비스 분리
 - Saga 패턴 또는 Outbox 패턴 기반 분산 트랜잭션 처리
-- 낙관적 락 / 비관적 락 / 분산 락을 통한 동시성 제어
+- 비관적 락 / 분산 락을 통한 동시성 제어
 - 서비스 간 실패 정책 명문화
 
 ---
