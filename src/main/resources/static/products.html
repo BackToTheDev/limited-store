@@ -1,0 +1,63 @@
+<<!DOCTYPE html>
+<html>
+<head>
+    <title>상품 목록</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        h1 {
+            color: #333;
+        }
+        .product-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .product-item {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>상품 목록</h1>
+    <div class="product-list" id="product-list">
+        로딩 중...
+    </div>
+
+    <script>
+        const token = localStorage.getItem("token");
+
+        fetch("http://localhost:8080/v1/products", {
+            method: "GET",
+            headers: {
+                "Authorization": "Bearer " + token
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const products = data.data;
+            const productList = document.getElementById("product-list");
+
+            productList.innerHTML = "";
+
+            products.forEach(product => {
+                productList.innerHTML += `
+                <div class="product-item">
+                    <h3>${product.name}</h3>
+                    <p>가격: ${product.price}원</p>
+                    <p>재고: ${product.stock}개</p>
+                </div>
+                `;
+            });
+        })
+        .catch(error => {
+            console.log("에러:", error);
+        });
+    </script>
+</body>
+</html>

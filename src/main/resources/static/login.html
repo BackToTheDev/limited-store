@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+    <head>
+         <title>Limited Store</title>
+         <style>
+         body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        .login-box {
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        input {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        </style>
+    </head>
+    <body>
+        <div class="login-box">
+            <h2>Limited Store 로그인</h2>
+            <input type="text" id="email" placeholder="이메일">
+            <input type="password" id="password" placeholder="비밀번호">
+            <button onclick="login()">로그인</button>
+        </div>
+        <script>
+            function login() {
+                const email = document.getElementById("email").value;
+                const password = document.getElementById("password").value;
+                
+                fetch("http://localhost:8080/v1/users/login", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    localStorage.setItem("token", data.data.accessToken);
+                    alert("로그인 성공!");
+                    window.location.href="products.html";
+                   
+                })
+                .catch(error => {
+                    console.log("에러:", error);
+                });
+               
+                }
+            
+        </script>
+    </body>
+   
+</html>
