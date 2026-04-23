@@ -1,6 +1,7 @@
-<<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>상품 목록</title>
     <style>
         body {
@@ -30,34 +31,58 @@
     </div>
 
     <script>
-        const token = localStorage.getItem("token");
+       const token = localStorage.getItem("token");
 
-        fetch("http://localhost:8080/v1/products", {
-            method: "GET",
-            headers: {
-                "Authorization": "Bearer " + token
-            }
+fetch("http://localhost:8080/v1/products", {
+    method: "GET",
+    headers: {
+        "Authorization": "Bearer " + token
+    }
+})
+.then(response => response.json())
+.then(data => {
+    const products = data.data;
+    const productList = document.getElementById("product-list");
+
+    productList.innerHTML = "";
+
+    products.forEach(product => {
+        const item = document.createElement("div");
+        item.className = "product-item";
+        item.innerHTML = 
+            "<h3>" + product.name + "</h3>" +
+            "<p>가격: " + product.price + "원</p>" +
+            "<p>재고: " + product.stock + "개</p>" +
+            "<button onclick=\"order('" + product.id + "')\">주문하기</button>";
+        productList.appendChild(item);
+    });
+})
+.catch(error => {
+    console.log("에러:", error);
+});
+
+function order(productId) {
+    const token = localStorage.getItem("token");
+
+    fetch("http://localhost:8080/v1/orders", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify({
+            productId: productId
         })
-        .then(response => response.json())
-        .then(data => {
-            const products = data.data;
-            const productList = document.getElementById("product-list");
-
-            productList.innerHTML = "";
-
-            products.forEach(product => {
-                productList.innerHTML += `
-                <div class="product-item">
-                    <h3>${product.name}</h3>
-                    <p>가격: ${product.price}원</p>
-                    <p>재고: ${product.stock}개</p>
-                </div>
-                `;
-            });
-        })
-        .catch(error => {
-            console.log("에러:", error);
-        });
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("주문 응답:", data);
+        alert("주문 성공!");
+    })
+    .catch(error => {
+        console.log("에러:", error);
+    });
+}
     </script>
 </body>
 </html>
